@@ -18,10 +18,6 @@ func main() {
 	}))
 
 	go srv.ListenAndServe("tcp", "127.0.0.1:9001")
-	go srv.ListenAndServe("tcp", "127.0.0.1:9002")
-	go srv.ListenAndServe("tcp", "127.0.0.1:9003")
-	go srv.ListenAndServe("tcp", "127.0.0.1:9004")
-	go srv.ListenAndServe("tcp", "127.0.0.1:9005")
 
 	done := make(chan os.Signal, 1)
 	defer close(done)

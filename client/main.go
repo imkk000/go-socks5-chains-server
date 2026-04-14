@@ -18,7 +18,6 @@ func main() {
 			"127.0.0.1:9002",
 			"127.0.0.1:9003",
 			"127.0.0.1:9004",
-			"127.0.0.1:9005",
 			"127.0.0.1:9050",
 		}
 		dialer, err := createProxyChains(chains)
@@ -52,9 +51,12 @@ func main() {
 
 func createProxyChains(chains []string) (proxy.Dialer, error) {
 	l := len(chains)
-	previousDialer, err := proxy.SOCKS5("tcp", chains[0], nil, proxy.Direct)
+	if l == 1 {
+		return proxy.SOCKS5("tcp", chains[0], nil, proxy.Direct)
+	}
+	previousDialer, err := proxy.SOCKS5("tcp", chains[l-1], nil, proxy.Direct)
 	if err != nil {
-		return nil, fmt.Errorf("create entry proxy: %w", err)
+		return nil, fmt.Errorf("create exit proxy: %w", err)
 	}
 	// random chains
 	midChains := chains[1 : l-1]
@@ -67,10 +69,10 @@ func createProxyChains(chains []string) (proxy.Dialer, error) {
 			return nil, fmt.Errorf("create middle proxy: %w", err)
 		}
 	}
-	exitDialer, err := proxy.SOCKS5("tcp", chains[l-1], nil, previousDialer)
+	entryDialer, err := proxy.SOCKS5("tcp", chains[0], nil, previousDialer)
 	if err != nil {
-		return nil, fmt.Errorf("create exit proxy: %w", err)
+		return nil, fmt.Errorf("create entry proxy: %w", err)
 	}
 
-	return exitDialer, nil
+	return entryDialer, nil
 }
