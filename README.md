@@ -1,26 +1,80 @@
-# Socks5 Proxy Forwarder
+# socks5-server
 
-## Why?
+A lightweight SOCKS5 proxy server with optional upstream proxy chaining support.
 
-I want to understand how proxy chains work and socks5 proxy forwarding. Try shuffle nodes, then exit node is tor proxy.
+## Features
 
-## Topology
+- SOCKS5 proxy server listening on port `9001`
+- Optional upstream proxy chaining (chain multiple SOCKS5 proxies)
+- Logs each connection with timestamp, source, and destination
+- Graceful shutdown on `SIGINT` / `SIGTERM`
+
+## Requirements
+
+- Go 1.26+
+
+## Build
+
+```sh
+go build -o socks5-server .
+```
+
+Or with Docker:
+
+```sh
+docker build -t socks5-server .
+```
+
+## Usage
+
+### Run directly
+
+```sh
+./socks5-server
+```
+
+### With proxy chaining
+
+Pass a comma-separated list of upstream SOCKS5 proxies via `-chains`. Traffic is forwarded through them in order (left to right).
+
+```sh
+./socks5-server -chains 10.0.0.1:1080,10.0.0.2:1080
+```
+
+### Run with Docker
+
+```sh
+docker run -p 9001:9001 socks5-server
+```
+
+With chains:
+
+```sh
+docker run -p 9001:9001 socks5-server -chains 10.0.0.1:1080,10.0.0.2:1080
+```
+
+## Flags
+
+| Flag      | Default  | Description                                               |
+|-----------|----------|-----------------------------------------------------------|
+| `-chains` | _(none)_ | Comma-separated list of upstream SOCKS5 proxies to chain  |
+
+## Server address
+
+The server listens on `0.0.0.0:9001` by default.
+
+## Logging
+
+Each accepted connection is logged to stdout:
 
 ```
-Local -> Entry Node -> Middle Nodes -> Exit Node
+[2026-04-20T10:00:00.000000000Z] start on :9001
+[2026-04-20T10:00:01.000000000Z] chain 1: 10.0.0.1:1080
+[2026-04-20T10:00:01.000000000Z] chain 2: 10.0.0.2:1080
+[2026-04-20T10:00:02.000000000Z] from: 192.168.1.5:54321 -> example.com:443 (1)
 ```
 
-## Shuffle Chains
+## Dependencies
 
-```
-# entry 9001
-from: 127.0.0.1:9001 -> 127.0.0.1:9004
-
-# random
-from: 127.0.0.1:9004 -> 127.0.0.1:9003
-from: 127.0.0.1:9003 -> 127.0.0.1:9005
-from: 127.0.0.1:9005 -> 127.0.0.1:9002
-
-# exit 9050 (tor)
-from: 127.0.0.1:9002 -> 127.0.0.1:9050
-```
+- [things-go/go-socks5](https://github.com/things-go/go-socks5)
+- [golang.org/x/net/proxy](https://pkg.go.dev/golang.org/x/net/proxy)
